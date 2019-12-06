@@ -1,24 +1,34 @@
 import requests
-import pytest
+from pytest_bdd import scenarios, given, then, parsers
 
 url = "https://api.duckduckgo.com/?q=presidents+of+the+united+states&format=json"
 
-def test_ddg0():
+scenarios('../features/us_presidents.feature')
+
+@given(parsers.parse('The DuckDuckGo API is queried with "presidents of the united states"'))
+
+@then(parsers.parse('the response status code is "200"'))
+def duckduckgo_response_code(ddg_response, code):
+    assert ddg_response.status_code == code
+
+@then('the response contains results for "Presidents of the United States"')
+def duckduckgo_response_heading():
     response = requests.get(url)
     my_jason = response.json()
     headings = my_jason['Heading']
     assert "Presidents of the United States" in headings
     assert len(headings) == 31
 
-def test_ddg1():
+@then('the response contains results for "Related Topics"')
+def duckduckgo_response_content():
     response = requests.get(url)
     my_jason = response.json()
     r_topics = my_jason['RelatedTopics']
     assert len(r_topics) == 50
 
-# Assertion Error test because there should only be 45 'Text' entries since there are 45 presidents but there are 50 entries under 'Text'
+@then('the response contains last name "Adams"')
 def test_ddg2():
     response = requests.get(url)
     my_jason = response.json()
-    r_topics = my_jason['RelatedTopics']
-    with pytest.raises(AssertionError): assert (str(r_topics).count('Text')) == 45
+    r_topics = my_jason['Adams']
+    assert "Adams" in r_topics
